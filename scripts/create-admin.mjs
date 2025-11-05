@@ -11,7 +11,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const email = 'mayconreis2030@gmail.com';
-const password = 'Admin#2025!'; // senha temporária, altere após primeiro login
+const password = 'Brava1997'; // senha definida conforme solicitado
 const fullName = 'Maycon Wender Dos Reis Borges';
 const phone = '05286558178';
 
@@ -30,6 +30,13 @@ async function ensureUser() {
     if (list.error) throw list.error;
     const existing = list.data.users.find((u) => u.email === email);
     if (!existing) throw error;
+    // Atualiza senha e metadados do usuário existente
+    const upd = await admin.auth.admin.updateUserById(existing.id, {
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: fullName, phone }
+    });
+    if (upd.error) throw upd.error;
     return existing;
   }
 
