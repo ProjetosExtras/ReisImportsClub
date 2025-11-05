@@ -281,7 +281,7 @@ const ProductDetail = () => {
                     <span className="text-5xl font-extrabold text-blue-400">12X</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-4">
-                    {['VISA','MasterCard','American Express','Hipercard','Elo','Diners','Boleto'].map((m) => (
+                    {['VISA','MasterCard','American Express','Hipercard','Elo','Diners'].map((m) => (
                       <span key={m} className="text-xs rounded border px-3 py-1 bg-background">
                         {m}
                       </span>
