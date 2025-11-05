@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Trash2, Minus, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface Product {
   id: string;
@@ -18,6 +19,7 @@ interface Product {
   price: number;
   image_url: string;
   stock: number;
+  cpf_limit_per_cpf?: number;
 }
 
 interface CartItem {
@@ -33,6 +35,7 @@ const Cart = () => {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'pix' | 'card'>('cash');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [phone, setPhone] = useState('');
+  const [cpf, setCpf] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -100,6 +103,13 @@ const Cart = () => {
       return;
     }
 
+    // Require CPF for per-CPF daily limit enforcement
+    const normalizedCpf = (cpf || '').replace(/\D/g, '');
+    if (!normalizedCpf || normalizedCpf.length !== 11) {
+      toast.error('Informe um CPF válido (11 dígitos)');
+      return;
+    }
+
     if (cart.length === 0) {
       toast.error('Carrinho vazio');
       return;
@@ -108,6 +118,73 @@ const Cart = () => {
     setLoading(true);
 
     try {
+      // Enforce per-CPF daily limit before creating the order
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      // Load product limits fresh from DB to ensure accuracy
+      const productIds = cart.map((item) => item.product.id);
+      const limitsMap = new Map<string, number | null>();
+
+      // Try selecting cpf_limit_per_cpf; if column doesn't exist, fallback to no limits
+      const prodSelect = await supabase
+        .from('products')
+        .select('id, cpf_limit_per_cpf')
+        .in('id', productIds);
+
+      if (prodSelect.error) {
+        const msg = String(prodSelect.error.message || '').toLowerCase();
+        if (msg.includes('cpf_limit_per_cpf') || msg.includes('does not exist')) {
+          // Column not present yet -> treat as no limit
+          productIds.forEach((id) => limitsMap.set(id, null));
+        } else {
+          throw prodSelect.error;
+        }
+      } else {
+        prodSelect.data?.forEach((p: any) => {
+          limitsMap.set(p.id, p.cpf_limit_per_cpf ?? null);
+        });
+      }
+
+      // Fetch today's orders for this CPF
+      const { data: ordersToday, error: ordersError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('cpf', normalizedCpf)
+        .gte('created_at', startOfToday.toISOString())
+        .in('status', ['pending', 'approved', 'in_route', 'delivered']);
+      if (ordersError) throw ordersError;
+
+      const orderIdsToday = (ordersToday || []).map((o: any) => o.id);
+
+      // For each cart item, compute already purchased today and compare with limit
+      for (const item of cart) {
+        const limit = limitsMap.get(item.product.id) ?? null;
+        if (limit === null) continue; // no limit
+        if (limit === 0) {
+          throw new Error(`Este item está bloqueado para compra por CPF hoje.`);
+        }
+
+        let alreadyQty = 0;
+        if (orderIdsToday.length > 0) {
+          const { data: itemsToday, error: itemsError } = await supabase
+            .from('order_items')
+            .select('quantity')
+            .in('order_id', orderIdsToday)
+            .eq('product_id', item.product.id);
+          if (itemsError) throw itemsError;
+          alreadyQty = (itemsToday || []).reduce((sum: number, it: any) => sum + (Number(it.quantity) || 0), 0);
+        }
+
+        const remaining = Number(limit) - alreadyQty;
+        if (remaining <= 0) {
+          throw new Error(`Limite diário atingido para este produto (CPF). Tente amanhã.`);
+        }
+        if (item.quantity > remaining) {
+          throw new Error(`Quantidade acima do permitido hoje para este produto. Máximo disponível: ${remaining}.`);
+        }
+      }
+
       // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -117,6 +194,7 @@ const Cart = () => {
           payment_method: paymentMethod,
           delivery_address: deliveryAddress,
           phone,
+          cpf: normalizedCpf,
           notes,
           status: 'pending',
         })
@@ -219,6 +297,16 @@ const Cart = () => {
               <h2 className="text-2xl font-bold mb-6">Finalizar Pedido</h2>
 
               <div className="space-y-4">
+              <div>
+                  <Label htmlFor="cpf">CPF</Label>
+                  <Input
+                    id="cpf"
+                    value={cpf}
+                    onChange={(e) => setCpf(e.target.value)}
+                    placeholder="000.000.000-00"
+                  />
+                </div>
+
                 <div>
                   <Label htmlFor="phone">Telefone (WhatsApp)</Label>
                   <Input
@@ -274,6 +362,15 @@ const Cart = () => {
                       R$ {total.toFixed(2)}
                     </span>
                   </div>
+                  <Alert variant={total < 70 ? 'destructive' : 'default'} className="mb-4">
+                    <AlertTitle>Aviso</AlertTitle>
+                    <AlertDescription>
+                      Compras precisam ser a partir de R$ 70,00 (Dinheiro, PIX ou Cartão na entrega).
+                      {total < 70 && (
+                        <span className="block mt-1">Total atual: R$ {total.toFixed(2)}</span>
+                      )}
+                    </AlertDescription>
+                  </Alert>
                   <p className="text-sm text-muted-foreground mb-4">
                     Pagamento na entrega
                   </p>

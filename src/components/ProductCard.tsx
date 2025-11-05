@@ -1,6 +1,8 @@
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
+import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
+import { StockUrgencyBar } from "./StockUrgencyBar";
 
 interface Product {
   id: string;
@@ -20,14 +22,20 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   return (
     <Card className="overflow-hidden group hover:shadow-elegant transition-all duration-300">
       <div className="aspect-square overflow-hidden">
-        <img
-          src={product.image_url}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-        />
+        <Link to={`/produto/${product.id}`}>
+          <img
+            src={product.image_url || '/placeholder.svg'}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          />
+        </Link>
       </div>
       <div className="p-6">
-        <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
+        <h3 className="font-semibold text-lg mb-2">
+          <Link to={`/produto/${product.id}`} className="hover:underline">
+            {product.name}
+          </Link>
+        </h3>
         <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
           {product.description}
         </p>
@@ -36,9 +44,8 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
             <p className="text-2xl font-bold bg-gradient-gold bg-clip-text text-transparent">
               R$ {product.price.toFixed(2)}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {product.stock > 0 ? `${product.stock} disponíveis` : 'Esgotado'}
-            </p>
+            {/* Urgency bar (force show for any positive stock by setting threshold to current stock) */}
+            <StockUrgencyBar remaining={product.stock} threshold={product.stock} className="w-48 mt-2" />
           </div>
           <Button
             variant="gold"
@@ -46,7 +53,7 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
             onClick={() => onAddToCart(product)}
             disabled={product.stock === 0}
           >
-            <ShoppingCart className="h-5 w-5" />
+            <ShoppingCart className="h-5 w-5 text-white" />
           </Button>
         </div>
       </div>

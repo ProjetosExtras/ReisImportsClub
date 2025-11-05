@@ -23,6 +23,8 @@ const AdminProductNew = () => {
     stock: "0",
     image_url: "",
     is_active: true,
+    cpf_limit_per_cpf: "",
+    category: "exclusivos" as "exclusivos" | "decor",
   });
 
   useEffect(() => {
@@ -52,7 +54,7 @@ const AdminProductNew = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -82,6 +84,13 @@ const AdminProductNew = () => {
     const stockNum = Number(form.stock);
     if (isNaN(stockNum) || stockNum < 0) {
       toast.error('Estoque inválido');
+      return;
+    }
+
+    // Limite por CPF (opcional)
+    const cpfLimitNum = form.cpf_limit_per_cpf.trim() === "" ? null : Number(form.cpf_limit_per_cpf);
+    if (cpfLimitNum !== null && (isNaN(cpfLimitNum) || cpfLimitNum < 0)) {
+      toast.error('Limite por CPF inválido');
       return;
     }
 
@@ -117,7 +126,8 @@ const AdminProductNew = () => {
         finalImageUrl = uploadedUrls[0] || finalImageUrl;
       }
 
-      const { data: productData, error } = await supabase
+      // Primeiro tenta com cpf_limit_per_cpf e category; se a coluna não existir, faz fallback sem elas
+      let insertRes = await supabase
         .from('products')
         .insert({
           name: form.name.trim(),
@@ -126,11 +136,35 @@ const AdminProductNew = () => {
           stock: stockNum,
           image_url: finalImageUrl,
           is_active: form.is_active,
+          cpf_limit_per_cpf: cpfLimitNum,
+          category: form.category,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (insertRes.error) {
+        const msg = String(insertRes.error.message || '').toLowerCase();
+        if (msg.includes('cpf_limit_per_cpf') || msg.includes('category') || msg.includes('column') || msg.includes('coluna')) {
+          insertRes = await supabase
+            .from('products')
+            .insert({
+              name: form.name.trim(),
+              description: form.description.trim() || null,
+              price: priceNum,
+              stock: stockNum,
+              image_url: finalImageUrl,
+              is_active: form.is_active,
+            })
+            .select()
+            .single();
+          if (!insertRes.error) {
+            toast.info('Produto salvo sem limite por CPF/categoria (aplique as migrações para habilitar).');
+          }
+        }
+      }
+
+      if (insertRes.error) throw insertRes.error;
+      const productData = insertRes.data;
 
       // Persistir imagens adicionais (além da principal) em product_images
       if (productData && uploadedUrls.length > 1) {
@@ -140,7 +174,7 @@ const AdminProductNew = () => {
           position: idx + 1,
         }));
 
-        const insertImages = await supabase
+        const insertImages = await (supabase as any)
           .from('product_images')
           .insert(extraImages);
 
@@ -179,9 +213,36 @@ const AdminProductNew = () => {
               <Textarea id="description" name="description" value={form.description} onChange={handleChange} placeholder="Detalhes do produto" />
             </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="stock">Estoque</Label>
+            <Input id="stock" name="stock" type="number" min="0" value={form.stock} onChange={handleChange} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cpf_limit_per_cpf">Limite por CPF</Label>
+            <Input
+              id="cpf_limit_per_cpf"
+              name="cpf_limit_per_cpf"
+              type="number"
+              min="0"
+              value={form.cpf_limit_per_cpf}
+              onChange={handleChange}
+              placeholder="Ex: 1 (opcional)"
+            />
+          </div>
+
             <div className="space-y-2">
-              <Label htmlFor="stock">Estoque</Label>
-              <Input id="stock" name="stock" type="number" min="0" value={form.stock} onChange={handleChange} />
+              <Label htmlFor="category">Categoria</Label>
+              <select
+                id="category"
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+              >
+                <option value="exclusivos">Produtos Exclusivos</option>
+                <option value="decor">Produtos Decoração de casa</option>
+              </select>
             </div>
 
             <div className="space-y-2">

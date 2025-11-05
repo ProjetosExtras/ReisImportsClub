@@ -164,6 +164,96 @@ const AdminFinance = () => {
     }
   };
 
+  // Calcula período da última semana (segunda a domingo)
+  const getLastWeekRange = () => {
+    const today = new Date();
+    // Normaliza para início do dia
+    today.setHours(0, 0, 0, 0);
+    // Dia da semana com segunda=0
+    const currentDay = (today.getDay() + 6) % 7;
+    const currentMonday = new Date(today);
+    currentMonday.setDate(today.getDate() - currentDay);
+    currentMonday.setHours(0, 0, 0, 0);
+
+    const lastMonday = new Date(currentMonday);
+    lastMonday.setDate(currentMonday.getDate() - 7);
+    lastMonday.setHours(0, 0, 0, 0);
+
+    const lastSunday = new Date(lastMonday);
+    lastSunday.setDate(lastMonday.getDate() + 6);
+    lastSunday.setHours(23, 59, 59, 999);
+
+    return { start: lastMonday, end: lastSunday };
+  };
+
+  // Gera metas automaticamente com base nas vendas da última semana
+  const generateAutoGoalsFromLastWeek = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Faça login para gerar metas');
+        navigate('/auth');
+        return;
+      }
+
+      const { start, end } = getLastWeekRange();
+      const startIso = start.toISOString();
+      const endIso = end.toISOString();
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select('total, created_at, status')
+        .gte('created_at', startIso)
+        .lte('created_at', endIso)
+        .in('status', ['approved', 'in_route', 'delivered']);
+
+      if (error) throw error;
+
+      const totalsByWeekday: Record<number, number> = {};
+      (data || []).forEach((o: OrderRow) => {
+        const d = new Date(o.created_at);
+        const weekday = d.getDay(); // 0=Domingo ... 6=Sábado
+        totalsByWeekday[weekday] = (totalsByWeekday[weekday] || 0) + Number(o.total || 0);
+      });
+
+      if (Object.keys(totalsByWeekday).length === 0) {
+        toast.info('Não há vendas na última semana para gerar metas.');
+        setLoading(false);
+        return;
+      }
+
+      // Preenche metas do mês seguindo o padrão por dia da semana
+      const newGoals: Record<string, number> = { ...goals };
+      daysInMonth.forEach((dateStr) => {
+        const d = new Date(dateStr + 'T00:00:00');
+        const weekday = d.getDay();
+        const value = totalsByWeekday[weekday] || 0;
+        newGoals[dateStr] = value;
+      });
+
+      setGoals(newGoals);
+
+      // Persiste metas geradas
+      const rows = daysInMonth
+        .filter((d) => newGoals[d] && newGoals[d] > 0)
+        .map((d) => ({ goal_date: d, target_amount: newGoals[d], created_by: user.id }));
+
+      if (rows.length > 0) {
+        const { error: upsertErr } = await supabase
+          .from('sales_goals')
+          .upsert(rows, { onConflict: 'goal_date' });
+        if (upsertErr) throw upsertErr;
+      }
+
+      toast.success('Metas automáticas geradas com base na última semana.');
+      setLoading(false);
+    } catch (err: any) {
+      toast.error('Erro ao gerar metas automáticas');
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
       <Navbar />
@@ -225,6 +315,8 @@ const AdminFinance = () => {
           <div className="mt-4 flex gap-2">
             <Button onClick={saveGoals}>Salvar metas</Button>
             <Button variant="secondary" onClick={loadFinance}>Atualizar</Button>
+            <Button variant="secondary" onClick={generateAutoGoalsFromLastWeek}>Gerar metas automáticas (última semana)</Button>
+            <Button variant="outline" onClick={() => navigate('/admin/financas/itens-mais-vendidos')}>Itens mais vendidos</Button>
           </div>
         </Card>
       </div>

@@ -68,16 +68,26 @@ export const Navbar = ({ cartItemsCount = 0 }: NavbarProps) => {
                     <Button variant="ghost" onClick={() => navigate('/admin')}>
                       Admin
                     </Button>
-                    <Button variant="ghost" onClick={() => navigate('/admin/financas')}>
-                      Finanças
-                    </Button>
+                    <div className="relative group">
+                      <Button variant="ghost" onClick={() => navigate('/admin/financas')}>
+                        Finanças
+                      </Button>
+                      <div className="absolute right-0 top-full min-w-[220px] rounded-md border bg-popover text-popover-foreground shadow-md z-50 hidden group-hover:block">
+                        <Link to="/admin/financas" className="block px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground">
+                          Resumo
+                        </Link>
+                        <Link to="/admin/financas/itens-mais-vendidos" className="block px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground">
+                          Itens mais vendidos
+                        </Link>
+                      </div>
+                    </div>
                   </>
                 )}
                 <Button variant="ghost" onClick={() => navigate('/orders')}>
                   Meus Pedidos
                 </Button>
                 <Button variant="ghost" onClick={() => navigate('/cart')} className="relative">
-                  <ShoppingCart className="h-5 w-5" />
+                  <ShoppingCart className="h-5 w-5 text-black" />
                   {cartItemsCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
                       {cartItemsCount}
@@ -92,7 +102,7 @@ export const Navbar = ({ cartItemsCount = 0 }: NavbarProps) => {
             ) : (
               <>
                 <Button variant="ghost" onClick={() => navigate('/cart')} className="relative">
-                  <ShoppingCart className="h-5 w-5" />
+                  <ShoppingCart className="h-5 w-5 text-black" />
                   {cartItemsCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
                       {cartItemsCount}
