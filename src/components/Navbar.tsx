@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import { ShoppingCart, User, LogOut } from "lucide-react";
+import { ShoppingCart, User, LogOut, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 
 interface NavbarProps {
   cartItemsCount?: number;
@@ -60,7 +61,8 @@ export const Navbar = ({ cartItemsCount = 0 }: NavbarProps) => {
             </h1>
           </Link>
 
-          <div className="flex items-center gap-4">
+          {/* Desktop actions */}
+          <div className="hidden md:flex items-center gap-4">
             {user ? (
               <>
                 {isAdmin && (
@@ -115,6 +117,60 @@ export const Navbar = ({ cartItemsCount = 0 }: NavbarProps) => {
                 </Button>
               </>
             )}
+          </div>
+
+          {/* Mobile menu */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Abrir menu">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right">
+                <div className="space-y-4">
+                  <Link to="/" className="block text-lg font-bold">ReisImportsClub</Link>
+                  {user ? (
+                    <>
+                      {isAdmin && (
+                        <div className="space-y-2">
+                          <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/admin')}>Admin</Button>
+                          <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/admin/financas')}>Finanças</Button>
+                          <Link to="/admin/financas" className="block text-sm text-muted-foreground">Resumo</Link>
+                          <Link to="/admin/financas/itens-mais-vendidos" className="block text-sm text-muted-foreground">Itens mais vendidos</Link>
+                        </div>
+                      )}
+                      <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/orders')}>Meus Pedidos</Button>
+                      <Button variant="ghost" className="w-full justify-start relative" onClick={() => navigate('/cart')}>
+                        <ShoppingCart className="h-5 w-5 mr-2" /> Carrinho
+                        {cartItemsCount > 0 && (
+                          <span className="absolute top-1 right-2 bg-accent text-accent-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                            {cartItemsCount}
+                          </span>
+                        )}
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
+                        <LogOut className="h-5 w-5 mr-2" /> Sair
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="ghost" className="w-full justify-start relative" onClick={() => navigate('/cart')}>
+                        <ShoppingCart className="h-5 w-5 mr-2" /> Carrinho
+                        {cartItemsCount > 0 && (
+                          <span className="absolute top-1 right-2 bg-accent text-accent-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                            {cartItemsCount}
+                          </span>
+                        )}
+                      </Button>
+                      <Button variant="premium" className="w-full justify-start" onClick={() => navigate('/auth')}>
+                        <User className="h-5 w-5 mr-2" /> Entrar
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>

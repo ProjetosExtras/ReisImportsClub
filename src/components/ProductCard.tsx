@@ -39,13 +39,13 @@ export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
         <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
           {product.description}
         </p>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-2xl font-bold bg-gradient-gold bg-clip-text text-transparent">
               R$ {product.price.toFixed(2)}
             </p>
             {/* Urgency bar (force show for any positive stock by setting threshold to current stock) */}
-            <StockUrgencyBar remaining={product.stock} threshold={product.stock} className="w-48 mt-2" />
+            <StockUrgencyBar remaining={product.stock} threshold={product.stock} className="w-full sm:w-48 mt-2" />
           </div>
           <Button
             variant="gold"

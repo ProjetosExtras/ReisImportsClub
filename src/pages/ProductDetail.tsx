@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockUrgencyBar } from "@/components/StockUrgencyBar";
@@ -162,154 +163,189 @@ const ProductDetail = () => {
         ) : !product ? (
           <p>Produto não encontrado.</p>
         ) : (
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <Card className="overflow-hidden">
-                <img
-                  src={product.image_url || extraImages[0]?.image_url || '/placeholder.svg'}
-                  alt={product.name}
-                  className="w-full h-[420px] object-cover"
-                />
-              </Card>
-              <div className="mt-4">
-                <div className="mb-4 max-w-3xl mx-auto text-center">
-                  <h3 className="text-xl font-semibold mb-2">Avaliações (10)</h3>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 justify-items-center">
-                    {socialProof.map((rev, idx) => (
-                      <li key={idx}>
-                        <Card className="p-4">
-                          <div className="flex items-center gap-2 text-yellow-500 text-sm">
-                            <span>{'★'.repeat(rev.rating)}</span>
-                            <span className="text-muted-foreground">{'☆'.repeat(5 - rev.rating)}</span>
-                          </div>
-                          <div className="mt-2 text-sm">
-                            <span className="font-semibold mr-2">{rev.name}</span>
-                            <span className="text-muted-foreground">{rev.date}</span>
-                          </div>
-                          <p className="mt-2 text-sm text-muted-foreground">{rev.comment}</p>
-                        </Card>
-                      </li>
-                    ))}
-                  </ul>
+          <>
+            <div className="grid gap-8 md:grid-cols-2">
+              <div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Card className="overflow-hidden cursor-zoom-in">
+                      <img
+                        src={product.image_url || extraImages[0]?.image_url || '/placeholder.svg'}
+                        alt={product.name}
+                        className="w-full h-[420px] md:h-[480px] object-cover"
+                      />
+                    </Card>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl p-0 bg-transparent border-0 shadow-none">
+                    <DialogTitle className="sr-only">{product.name}</DialogTitle>
+                    <img
+                      src={product.image_url || extraImages[0]?.image_url || '/placeholder.svg'}
+                      alt={product.name}
+                      className="w-full h-auto max-h-[80vh] object-contain rounded"
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+                  {product.name}
+                  <VerifiedBadge />
+                </h1>
+                <div className="flex items-center gap-2 text-yellow-500 text-sm mb-2">
+                  <span>{'★'.repeat(fullStars)}</span>
+                  <span className="text-muted-foreground">{'☆'.repeat(emptyStars)}</span>
+                  <span className="text-muted-foreground">({reviewsCount} avaliações)</span>
                 </div>
-                <h2 className="text-xl font-semibold mb-2">DECRIÇÃO DO PRODUTO</h2>
-                <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
-              </div>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-                {product.name}
-                <VerifiedBadge />
-              </h1>
-              <div className="flex items-center gap-2 text-yellow-500 text-sm mb-2">
-                <span>{'★'.repeat(fullStars)}</span>
-                <span className="text-muted-foreground">{'☆'.repeat(emptyStars)}</span>
-                <span className="text-muted-foreground">({reviewsCount} avaliações)</span>
-              </div>
 
-              <div className="flex items-center gap-4 mb-2">
-                <span className="text-4xl font-extrabold text-pink-500">
-                  {formatCurrency(product.price)}
-                </span>
-                <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-1 rounded">-{discountPercent}%</span>
-              </div>
-              <div className="text-lg text-muted-foreground mb-1">
-                2x de {formatCurrency(installment2x)}
-              </div>
-              <button className="text-sm text-blue-600 underline mb-4">Ver opções de parcelamento</button>
-
-              <div className="flex items-center gap-2 text-lg font-semibold mb-4">
-                <span>Frete grátis</span>
-                <span className="text-green-600">⚡ FULL</span>
-              </div>
-
-              <div className="flex items-center gap-2 mb-2">
-                <Card className="flex items-center justify-between w-[160px] p-2">
-                  <button
-                    className="text-xl px-3 disabled:opacity-50"
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    aria-label="Diminuir quantidade"
-                    disabled={quantity <= 1}
-                  >
-                    −
-                  </button>
-                  <span className="text-lg font-semibold">{quantity}</span>
-                  <button
-                    className="text-xl px-3 disabled:opacity-50"
-                    onClick={() => setQuantity((q) => {
-                      const limit = typeof product.cpf_limit_per_cpf === 'number' ? (product.cpf_limit_per_cpf ?? null) : null;
-                      const maxAllowed = Math.min(product.stock, typeof limit === 'number' ? limit : Infinity);
-                      return Math.min(q + 1, maxAllowed);
-                    })}
-                    aria-label="Aumentar quantidade"
-                    disabled={(() => {
-                      const limit = typeof product.cpf_limit_per_cpf === 'number' ? (product.cpf_limit_per_cpf ?? null) : null;
-                      const maxAllowed = Math.min(product.stock, typeof limit === 'number' ? limit : Infinity);
-                      return quantity >= maxAllowed;
-                    })()}
-                  >
-                    +
-                  </button>
-                </Card>
-                <Button
-                  size="lg"
-                  className="bg-green-500 hover:bg-green-600 text-white h-12 px-10"
-                  onClick={addToCart}
-                  disabled={product.stock === 0 || product.cpf_limit_per_cpf === 0}
-                >
-                  comprar
-                </Button>
-              </div>
-              {typeof product.cpf_limit_per_cpf === 'number' && product.cpf_limit_per_cpf !== null && (
-                <p className="text-xs text-muted-foreground mb-4">Limite de {product.cpf_limit_per_cpf} unidade(s) por CPF.</p>
-              )}
-
-              <div className="mb-6">
-                <p className="text-sm">PARCELE SUA COMPRA POR <span className="font-semibold">MERCADOPAGO</span> EM ATÉ:</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="text-5xl font-extrabold text-blue-400">12X</span>
+                <div className="flex flex-wrap items-center gap-4 mb-2">
+                  <span className="text-4xl font-extrabold text-pink-500">
+                    {formatCurrency(product.price)}
+                  </span>
+                  <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-1 rounded">-{discountPercent}%</span>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 mt-4">
-                  {['VISA','MasterCard','American Express','Hipercard','Elo','Diners','Boleto'].map((m) => (
-                    <span key={m} className="text-xs rounded border px-3 py-1 bg-background">
-                      {m}
-                    </span>
-                  ))}
+                <div className="text-lg text-muted-foreground mb-1">
+                  2x de {formatCurrency(installment2x)}
                 </div>
-              </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button className="text-sm text-blue-600 underline mb-4">
+                      Ver opções de parcelamento
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogTitle>Parcelamento</DialogTitle>
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Parcelamento disponível em até 2x sem juros.
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl font-semibold">2x</span>
+                        <span className="text-lg">de {formatCurrency(installment2x)}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Pagamento na entrega via MercadoPago (PIX, cartão ou dinheiro).
+                      </p>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
-              <div className="mb-6">
-                <p className="text-sm font-semibold">SIMULAR FRETE</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <input
-                    type="text"
-                    placeholder="Ex.: 00000-000"
-                    className="border rounded px-3 py-2 w-48"
-                  />
+                <div className="flex items-center gap-2 text-lg font-semibold mb-4">
+                  <span>Frete grátis</span>
+                  <span className="text-green-600">⚡ FULL</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <Card className="flex items-center justify-between w-full sm:w-[160px] p-2">
+                    <button
+                      className="text-xl px-3 disabled:opacity-50"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      aria-label="Diminuir quantidade"
+                      disabled={quantity <= 1}
+                    >
+                      −
+                    </button>
+                    <span className="text-lg font-semibold">{quantity}</span>
+                    <button
+                      className="text-xl px-3 disabled:opacity-50"
+                      onClick={() => setQuantity((q) => {
+                        const limit = typeof product.cpf_limit_per_cpf === 'number' ? (product.cpf_limit_per_cpf ?? null) : null;
+                        const maxAllowed = Math.min(product.stock, typeof limit === 'number' ? limit : Infinity);
+                        return Math.min(q + 1, maxAllowed);
+                      })}
+                      aria-label="Aumentar quantidade"
+                      disabled={(() => {
+                        const limit = typeof product.cpf_limit_per_cpf === 'number' ? (product.cpf_limit_per_cpf ?? null) : null;
+                        const maxAllowed = Math.min(product.stock, typeof limit === 'number' ? limit : Infinity);
+                        return quantity >= maxAllowed;
+                      })()}
+                    >
+                      +
+                    </button>
+                  </Card>
                   <Button
-                    className="bg-pink-400 hover:bg-pink-500 text-white"
-                    onClick={() => toast.info('Frete calculado no checkout')}
+                    size="lg"
+                    className="bg-green-500 hover:bg-green-600 text-white h-12 px-10"
+                    onClick={addToCart}
+                    disabled={product.stock === 0 || product.cpf_limit_per_cpf === 0}
                   >
-                    OK
+                    comprar
                   </Button>
                 </div>
-              </div>
+                {typeof product.cpf_limit_per_cpf === 'number' && product.cpf_limit_per_cpf !== null && (
+                  <p className="text-xs text-muted-foreground mb-4">Limite de {product.cpf_limit_per_cpf} unidade(s) por CPF.</p>
+                )}
 
-              <Card className="p-4 mb-6">
-                <p className="text-sm text-muted-foreground">Oferta por tempo limitado</p>
-                <div className="text-2xl font-mono mt-2">⏳ {formatTime(timeLeft)}</div>
-              </Card>
+                <div className="mb-6">
+                  <p className="text-sm">PARCELE SUA COMPRA POR <span className="font-semibold">MERCADOPAGO</span> EM ATÉ:</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-5xl font-extrabold text-blue-400">12X</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-4">
+                    {['VISA','MasterCard','American Express','Hipercard','Elo','Diners','Boleto'].map((m) => (
+                      <span key={m} className="text-xs rounded border px-3 py-1 bg-background">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="text-sm text-muted-foreground">
-                {product.stock > 0 ? `${product.stock} disponíveis` : 'Esgotado'}
-              </div>
-              {/* Urgency bar under stock info */}
-              <div className="mt-2 max-w-xs">
-                {/* Force show the stock bar for any positive stock */}
-                <StockUrgencyBar remaining={product.stock} threshold={product.stock} />
+                <div className="mb-6">
+                  <p className="text-sm font-semibold">SIMULAR FRETE</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <input
+                      type="text"
+                      placeholder="Ex.: 00000-000"
+                      className="border rounded px-3 py-2 w-full sm:w-48"
+                    />
+                    <Button
+                      className="bg-pink-400 hover:bg-pink-500 text-white"
+                      onClick={() => toast.info('Frete calculado no checkout')}
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+
+                <Card className="p-4 mb-6">
+                  <p className="text-sm text-muted-foreground">Oferta por tempo limitado</p>
+                  <div className="text-2xl font-mono mt-2">⏳ {formatTime(timeLeft)}</div>
+                </Card>
+
+                <div className="text-sm text-muted-foreground">
+                  {product.stock > 0 ? `${product.stock} disponíveis` : 'Esgotado'}
+                </div>
+                {/* Urgency bar under stock info */}
+                <div className="mt-2 max-w-xs">
+                  {/* Force show the stock bar for any positive stock */}
+                  <StockUrgencyBar remaining={product.stock} threshold={product.stock} />
+                </div>
               </div>
             </div>
-          </div>
+            <div className="mt-4">
+              <h2 className="text-xl font-semibold mb-2">DECRIÇÃO DO PRODUTO</h2>
+              <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
+              <div className="mt-6 max-w-3xl mx-auto text-center">
+                <h3 className="text-xl font-semibold mb-2">Avaliações (10)</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 justify-items-center">
+                  {socialProof.map((rev, idx) => (
+                    <li key={idx}>
+                      <Card className="p-4">
+                        <div className="flex items-center gap-2 text-yellow-500 text-sm">
+                          <span>{'★'.repeat(rev.rating)}</span>
+                          <span className="text-muted-foreground">{'☆'.repeat(5 - rev.rating)}</span>
+                        </div>
+                        <div className="mt-2 text-sm">
+                          <span className="font-semibold mr-2">{rev.name}</span>
+                          <span className="text-muted-foreground">{rev.date}</span>
+                        </div>
+                        <p className="mt-2 text-sm text-muted-foreground">{rev.comment}</p>
+                      </Card>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

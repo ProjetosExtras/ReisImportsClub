@@ -251,7 +251,7 @@ const Cart = () => {
             <div className="lg:col-span-2 space-y-4">
               {cart.map((item) => (
                 <Card key={item.product.id} className="p-4">
-                  <div className="flex gap-4">
+                  <div className="flex flex-wrap gap-4">
                     <img
                       src={item.product.image_url}
                       alt={item.product.name}
@@ -262,7 +262,7 @@ const Cart = () => {
                       <p className="text-sm text-muted-foreground mb-2">
                         R$ {item.product.price.toFixed(2)}
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Button
                           variant="outline"
                           size="icon"
