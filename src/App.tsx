@@ -13,6 +13,7 @@ import AdminBestSellers from "./pages/AdminBestSellers";
 import AdminProductNew from "./pages/AdminProductNew";
 import AdminProducts from "./pages/AdminProducts";
 import AdminProductEdit from "./pages/AdminProductEdit";
+import AdminCustomers from "./pages/AdminCustomers";
 import NotFound from "./pages/NotFound";
 import ProductDetail from "./pages/ProductDetail";
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/admin/produtos/:id/editar" element={<AdminProductEdit />} />
           <Route path="/admin/financas" element={<AdminFinance />} />
           <Route path="/admin/financas/itens-mais-vendidos" element={<AdminBestSellers />} />
+          <Route path="/admin/clientes" element={<AdminCustomers />} />
           <Route path="/admin/produtos/novo" element={<AdminProductNew />} />
           <Route path="/produto/:id" element={<ProductDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

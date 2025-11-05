@@ -275,50 +275,7 @@ const AdminFinance = () => {
           </Card>
         </div>
 
-        <Card className="p-4">
-          <h2 className="text-lg font-semibold mb-4">Metas e Realizado por dia</h2>
-          {loading ? (
-            <p>Carregando...</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left">
-                    <th className="py-2 pr-4">Data</th>
-                    <th className="py-2 pr-4">Meta (R$)</th>
-                    <th className="py-2 pr-4">Realizado (R$)</th>
-                    <th className="py-2 pr-4">Progresso</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {daysInMonth.map((d) => {
-                    const realized = dailySales[d] || 0;
-                    const target = goals[d] || 0;
-                    const progress = target > 0 ? Math.min(100, Math.round((realized / target) * 100)) : 0;
-                    return (
-                      <tr key={d} className="border-t">
-                        <td className="py-2 pr-4">{new Date(d).toLocaleDateString()}</td>
-                        <td className="py-2 pr-4">
-                          <Label htmlFor={`goal-${d}`} className="sr-only">Meta</Label>
-                          <Input id={`goal-${d}`} type="number" step="0.01" value={target || ''} onChange={(e) => handleGoalChange(d, e.target.value)} className="w-32" />
-                        </td>
-                        <td className="py-2 pr-4">R$ {realized.toFixed(2)}</td>
-                        <td className="py-2 pr-4">{progress}%</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="mt-4 flex gap-2">
-            <Button onClick={saveGoals}>Salvar metas</Button>
-            <Button variant="secondary" onClick={loadFinance}>Atualizar</Button>
-            <Button variant="secondary" onClick={generateAutoGoalsFromLastWeek}>Gerar metas automáticas (última semana)</Button>
-            <Button variant="outline" onClick={() => navigate('/admin/financas/itens-mais-vendidos')}>Itens mais vendidos</Button>
-          </div>
-        </Card>
+        {/* Seção de metas removida conforme solicitado */}
       </div>
     </div>
   );

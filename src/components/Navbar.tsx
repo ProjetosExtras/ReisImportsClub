@@ -67,9 +67,25 @@ export const Navbar = ({ cartItemsCount = 0 }: NavbarProps) => {
               <>
                 {isAdmin && (
                   <>
-                    <Button variant="ghost" onClick={() => navigate('/admin')}>
-                      Admin
-                    </Button>
+                    <div className="relative group">
+                      <Button variant="ghost" onClick={() => navigate('/admin')}>
+                        Admin
+                      </Button>
+                      <div className="absolute right-0 top-full min-w-[220px] rounded-md border bg-popover text-popover-foreground shadow-md z-50 hidden group-hover:block">
+                        <Link to="/admin" className="block px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground">
+                          Painel
+                        </Link>
+                        <Link to="/admin/clientes" className="block px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground">
+                          Clientes
+                        </Link>
+                        <Link to="/admin/produtos" className="block px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground">
+                          Produtos
+                        </Link>
+                        <Link to="/admin/financas" className="block px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground">
+                          Finanças
+                        </Link>
+                      </div>
+                    </div>
                     <div className="relative group">
                       <Button variant="ghost" onClick={() => navigate('/admin/financas')}>
                         Finanças
@@ -138,6 +154,7 @@ export const Navbar = ({ cartItemsCount = 0 }: NavbarProps) => {
                           <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/admin/financas')}>Finanças</Button>
                           <Link to="/admin/financas" className="block text-sm text-muted-foreground">Resumo</Link>
                           <Link to="/admin/financas/itens-mais-vendidos" className="block text-sm text-muted-foreground">Itens mais vendidos</Link>
+                          <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/admin/clientes')}>Clientes</Button>
                         </div>
                       )}
                       <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/orders')}>Meus Pedidos</Button>
