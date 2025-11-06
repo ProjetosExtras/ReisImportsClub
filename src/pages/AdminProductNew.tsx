@@ -27,6 +27,19 @@ const AdminProductNew = () => {
     category: "exclusivos" as "exclusivos" | "decor",
   });
 
+  // Utilitários para máscara e parsing em Real brasileiro (pt-BR)
+  const formatCurrencyBRLInput = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    const number = Number(digits || "0") / 100;
+    return number.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const parseCurrencyBRLToNumber = (masked: string) => {
+    const normalized = masked.replace(/\./g, "").replace(/,/g, ".").replace(/[^0-9.]/g, "");
+    const n = Number(normalized);
+    return n;
+  };
+
   useEffect(() => {
     checkAdmin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -56,6 +69,11 @@ const AdminProductNew = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (name === "price") {
+      const masked = formatCurrencyBRLInput(value);
+      setForm((prev) => ({ ...prev, price: masked }));
+      return;
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -76,7 +94,7 @@ const AdminProductNew = () => {
       toast.error('Informe o nome do produto');
       return;
     }
-    const priceNum = Number(form.price);
+    const priceNum = parseCurrencyBRLToNumber(form.price);
     if (isNaN(priceNum) || priceNum <= 0) {
       toast.error('Preço inválido');
       return;
@@ -205,7 +223,7 @@ const AdminProductNew = () => {
 
             <div className="space-y-2">
               <Label htmlFor="price">Preço (R$)</Label>
-              <Input id="price" name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleChange} placeholder="Ex: 1299.90" />
+              <Input id="price" name="price" type="text" inputMode="decimal" autoComplete="off" value={form.price} onChange={handleChange} placeholder="Ex: 1.299,90" />
             </div>
 
             <div className="space-y-2 md:col-span-2">

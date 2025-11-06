@@ -112,6 +112,10 @@ export const Navbar = ({ cartItemsCount = 0 }: NavbarProps) => {
                     </span>
                   )}
                 </Button>
+                <Button variant="ghost" onClick={() => navigate('/meu-cadastro')}>
+                  <User className="h-5 w-5 mr-2" />
+                  Meu Cadastro
+                </Button>
                 <Button variant="ghost" onClick={handleLogout}>
                   <LogOut className="h-5 w-5 mr-2" />
                   Sair
@@ -165,6 +169,9 @@ export const Navbar = ({ cartItemsCount = 0 }: NavbarProps) => {
                             {cartItemsCount}
                           </span>
                         )}
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/meu-cadastro')}>
+                        <User className="h-5 w-5 mr-2" /> Meu Cadastro
                       </Button>
                       <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
                         <LogOut className="h-5 w-5 mr-2" /> Sair

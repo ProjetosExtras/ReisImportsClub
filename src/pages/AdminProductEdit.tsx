@@ -34,6 +34,19 @@ const AdminProductEdit = () => {
     category: "exclusivos" as "exclusivos" | "decor",
   });
 
+  // Utilitários para máscara e parsing em Real brasileiro (pt-BR)
+  const formatCurrencyBRLInput = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    const number = Number(digits || "0") / 100;
+    return number.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const parseCurrencyBRLToNumber = (masked: string) => {
+    const normalized = masked.replace(/\./g, "").replace(/,/g, ".").replace(/[^0-9.]/g, "");
+    const n = Number(normalized);
+    return n;
+  };
+
   useEffect(() => {
     checkAdmin();
     loadProduct();
@@ -93,7 +106,7 @@ const AdminProductEdit = () => {
         setForm({
           name: data.name || "",
           description: data.description || "",
-          price: String(data.price ?? ""),
+          price: data.price != null ? Number(data.price).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "",
           stock: String(data.stock ?? "0"),
           image_url: data.image_url || "",
           is_active: Boolean(data.is_active),
@@ -108,6 +121,11 @@ const AdminProductEdit = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (name === "price") {
+      const masked = formatCurrencyBRLInput(value);
+      setForm((prev) => ({ ...prev, price: masked }));
+      return;
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -285,7 +303,7 @@ const AdminProductEdit = () => {
       toast.error('Informe o nome do produto');
       return;
     }
-    const priceNum = Number(form.price);
+    const priceNum = parseCurrencyBRLToNumber(form.price);
     if (isNaN(priceNum) || priceNum <= 0) {
       toast.error('Preço inválido');
       return;
@@ -440,7 +458,8 @@ const AdminProductEdit = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Editar Produto</h1>
-        <Card className="p-6">
+        <div className="max-w-3xl mx-auto">
+          <Card className="p-6 md:p-8 rounded-xl border border-muted shadow-lg bg-card/80 backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="name">Nome</Label>
@@ -449,7 +468,7 @@ const AdminProductEdit = () => {
 
             <div className="space-y-2">
               <Label htmlFor="price">Preço (R$)</Label>
-              <Input id="price" name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleChange} />
+              <Input id="price" name="price" type="text" inputMode="decimal" autoComplete="off" placeholder="Ex: 1.299,90" value={form.price} onChange={handleChange} />
             </div>
 
             <div className="space-y-2 md:col-span-2">
@@ -502,7 +521,7 @@ const AdminProductEdit = () => {
                 accept="image/*"
                 multiple
                 onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
-                className="block text-sm"
+                className="block text-sm rounded-md border border-dashed border-input px-3 py-2 bg-background"
               />
               <div className="flex items-center gap-2">
                 <Button type="button" variant="outline" onClick={handleUploadImages} disabled={loading || imageFiles.length === 0}>
@@ -579,7 +598,8 @@ const AdminProductEdit = () => {
               <Button type="submit" variant="gold" disabled={loading}>{loading ? 'Salvando...' : 'Salvar Alterações'}</Button>
             </div>
           </form>
-        </Card>
+          </Card>
+        </div>
       </div>
     </div>
   );

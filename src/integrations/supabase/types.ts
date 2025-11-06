@@ -68,6 +68,7 @@ export type Database = {
           total: number
           updated_at: string
           user_id: string
+          cpf: string | null
         }
         Insert: {
           created_at?: string
@@ -80,6 +81,7 @@ export type Database = {
           total: number
           updated_at?: string
           user_id: string
+          cpf?: string | null
         }
         Update: {
           created_at?: string
@@ -92,6 +94,7 @@ export type Database = {
           total?: number
           updated_at?: string
           user_id?: string
+          cpf?: string | null
         }
         Relationships: [
           {
@@ -146,6 +149,8 @@ export type Database = {
           full_name: string
           id: string
           phone: string
+          cpf: string | null
+          rg_url: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
@@ -155,6 +160,8 @@ export type Database = {
           full_name: string
           id: string
           phone: string
+          cpf?: string | null
+          rg_url?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -164,6 +171,8 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string
+          cpf?: string | null
+          rg_url?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
