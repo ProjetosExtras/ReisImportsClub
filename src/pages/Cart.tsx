@@ -11,6 +11,16 @@ import { toast } from "sonner";
 import { Trash2, Minus, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface Product {
   id: string;
@@ -38,6 +48,7 @@ const Cart = () => {
   const [cpf, setCpf] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [minOrderOpen, setMinOrderOpen] = useState(false);
 
   useEffect(() => {
     loadCart();
@@ -90,6 +101,8 @@ const Cart = () => {
   };
 
   const total = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   const handleCheckout = async () => {
     if (!user) {
@@ -374,10 +387,36 @@ const Cart = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Pagamento na entrega
                   </p>
+                  {/* Modal de aviso para pedido mínimo */}
+                  <AlertDialog open={minOrderOpen} onOpenChange={setMinOrderOpen}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Valor mínimo não atingido</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          O pedido mínimo é de {formatCurrency(70)}.
+                          {total < 70 && (
+                            <span className="block mt-1">
+                              Faltam {formatCurrency(70 - total)} para atingir o mínimo.
+                            </span>
+                          )}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Fechar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => setMinOrderOpen(false)}>Entendi</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   <Button
                     variant="gold"
                     className="w-full"
-                    onClick={handleCheckout}
+                    onClick={() => {
+                      if (total < 70) {
+                        setMinOrderOpen(true);
+                        return;
+                      }
+                      handleCheckout();
+                    }}
                     disabled={loading}
                   >
                     {loading ? 'Processando...' : 'Finalizar Pedido'}
